@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PortalPulse | Jira Portal Monitor</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">J</div>
+
+            <div class="brand-info">
+                <b>PORTALPULSE</b>
+                <small>Multi-portal Jira monitor</small>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="side-menu">
+            <div class="side-note">WORKSPACE</div>
+            <div class="nav active" data-target="main-dashboard">
+                <span class="nav-icon">📊</span> Overview & Metrics
+            </div>
+            <div class="nav" data-target="additional-dashboard">
+                <span class="nav-icon">⚡</span> Additional Requests
+            </div>
+        </div>
+
+        <!-- Connected Portals Status -->
+        <div class="side-portals">
+            <div class="side-note">CONNECTED SITES</div>
+            <div class="portal-card">
+                <i class="dot site-a"></i>
+                <div class="portal-detail">
+                    <span class="portal-name">Site A</span>
+                    <span class="portal-url">Jira portal</span>
+                </div>
+                <span class="portal-badge">A</span>
+            </div>
+            <div class="portal-card">
+                <i class="dot site-b"></i>
+                <div class="portal-detail">
+                    <span class="portal-name">Site B</span>
+                    <span class="portal-url">Jira portal</span>
+                </div>
+                <span class="portal-badge">B</span>
+            </div>
+            <div class="portal-card">
+                <i class="dot site-c"></i>
+                <div class="portal-detail">
+                    <span class="portal-name">Site C</span>
+                    <span class="portal-url">Jira portal</span>
+                </div>
+                <span class="portal-badge">C</span>
+            </div>
+        </div>
+
+        <!-- Footer / Local Security Note -->
+        <div class="side-bottom">
+            <div class="local-badge">
+                <span>🛡️</span> <strong>Local Desktop App</strong>
+            </div>
+            <small>Data stays securely on your machine</small>
+        </div>
+    </aside>
+    
+    <main>
+        <header>
+            <div>
+                <h1 id="page-title">Overview</h1>
+                <p id="page-subtitle">One view for every Jira portal</p>
+            </div>
+            <div class="actions">
+                <span id="refresh-label">Not refreshed yet</span>
+                <button id="refreshBtn">↻ Refresh now</button>
+            </div>
+        </header>
+
+        <!-- 1. Bagian General Dashboard -->
+        <div id="main-dashboard" class="dashboard-section active-section">
+            <section class="cards">
+                <article class="metric"><span>Total Tickets</span><strong id="total">—</strong><small>Unique issues across queries</small></article>
+                <article class="metric"><span>Open / Active</span><strong id="open">—</strong><small>Not in Done status category</small></article>
+                <article class="metric"><span>Site A</span><strong id="siteA">—</strong><small>Matched Site A queries</small></article>
+                <article class="metric"><span>Site B</span><strong id="siteB">—</strong><small>Matched Site B queries</small></article>
+                <article class="metric"><span>Site C</span><strong id="siteC">—</strong><small>Matched Site C queries</small></article>
+            </section>
+            
+            <div class="dashboard-grid-layout">
+                <!-- Baris 1: Ticket Distribution & Status Distribution -->
+                <section class="panel chart-panel chart-ticket">
+                    <div class="panel-head"><div><h2>Ticket distribution</h2><p>Unique tickets by site</p></div></div>
+                    <div class="chart-wrap"><canvas id="portalChart"></canvas></div>
+                </section>
+
+                <section class="panel chart-panel chart-status">
+                    <div class="panel-head"><div><h2>Status distribution by site</h2><p>Breakdown across sites</p></div></div>
+                    <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+                </section>
+
+                <!-- Assignee breakdown by site -->
+                <section class="panel chart-panel chart-site-a">
+                    <div class="panel-head"><div><h2>Site A Assignees</h2><p>Top assignees in Site A</p></div></div>
+                    <div class="chart-wrap"><canvas id="assigneeSiteAChart"></canvas></div>
+                </section>
+
+                <section class="panel chart-panel chart-site-b">
+                    <div class="panel-head"><div><h2>Site B Assignees</h2><p>Top assignees in Site B</p></div></div>
+                    <div class="chart-wrap"><canvas id="assigneeSiteBChart"></canvas></div>
+                </section>
+
+                <section class="panel chart-panel chart-site-c">
+                    <div class="panel-head"><div><h2>Site C Assignees</h2><p>Top assignees in Site C</p></div></div>
+                    <div class="chart-wrap"><canvas id="assigneeSiteCChart"></canvas></div>
+                </section>
+            </div>
+            
+            <section class="panel">
+                <div class="panel-head table-head">
+                    <div><h2>Ticket inventory</h2><p id="ticketSub">Loading cached data…</p></div>
+                    <div class="filters">
+                        <select id="siteFilter"><option value="">All sites</option><option value="SITE_A">Site A</option><option value="SITE_B">Site B</option><option value="SITE_C">Site C</option></select>
+                        <select id="statusFilter"><option value="">All statuses</option></select>
+                        <input id="search" placeholder="Search key, summary, assignee…">
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>Issue</th><th>Site</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Priority</th><th>Due date</th><th>Updated</th></tr></thead>
+                        <tbody id="tickets"></tbody>
+                    </table>
+                </div>
+                <div class="table-foot"><span id="shown">0 tickets</span><span>Click an issue key to open Jira</span></div>
+            </section>
+            
+            <section class="panel" id="errorsPanel" hidden>
+                <h2>Refresh warnings</h2><div id="errors"></div>
+            </section>
+        </div>
+
+        <div id="additional-dashboard" class="dashboard-section">
+            <div class="additional-header">
+                <div class="site-filter-buttons">
+                    <button class="filter-site-btn active" data-site="ALL">All Sites</button>
+                    <button class="filter-site-btn" data-site="SITE_A">Site A</button>
+                    <button class="filter-site-btn" data-site="SITE_B">Site B</button>
+                    <button class="filter-site-btn" data-site="SITE_C">Site C</button>
+                </div>
+            </div>
+
+            <div class="additional-metrics-grid">
+                <div class="metric-card">
+                    <h3>Total Additional Requests</h3>
+                    <span id="additional-total-count">0</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Site A Requests</h3>
+                    <span id="additional-site-a-count">0</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Site B Requests</h3>
+                    <span id="additional-site-b-count">0</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Site C Requests</h3>
+                    <span id="additional-site-c-count">0</span>
+                </div>
+            </div>
+
+            <section class="panel">
+                <div class="table-scroll">
+                    <table id="additional-tickets-table">
+                        <thead>
+                            <tr>
+                                <th>Site</th>
+                                <th>Issue Key</th>
+                                <th>Summary</th>
+                                <th>Status</th>
+                                <th>Assignee</th>
+                                <th>Created Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="additional-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <footer>PortalPulse · Local application · Credentials stay in the backend environment</footer>
+    </main>
+</div>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>
